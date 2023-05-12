@@ -14,8 +14,8 @@ fn find_delimiter <F> (s:&str, op:F)-> (&str,&str) where F: Fn(char)->bool, {
     let delim = s.chars().position(op);
     match delim {
         Some(delim)=>{
-        let (first_token,remainder) = s.split_at(delim);
-        return (first_token,remainder);
+            let (first_token,remainder) = s.split_at(delim);
+            return (first_token,remainder);
         }
         None => {return (s," ");} 
     } 
@@ -38,10 +38,22 @@ fn get_first_token(s:&str)->(&str,&str){
                 return (" ", " ");
             }
         }
-        None => {return (" ", " ");}
+    None => {return (" ", " ");}
     
     }   
 }
+fn tokenize(s:&str, tokens: &mut Vec<String>)->Vec<String>{
+    let (first,remainder) = get_first_token(&s);
+    if remainder.eq(" "){
+        tokens.push(first.to_string());
+        return tokens.iter().map(|s|s.to_string()).collect();
+    }else{
+        tokens.push(first.to_string());
+        return tokenize(&remainder, tokens);
+    }
+}
 fn main() {
-    println!("{}", get_first_token("17peepeepoo111=45").0);
+    let mut tokens = Vec::new();
+    let result = tokenize("1234peepeebutt+16", &mut tokens);
+    result.iter().for_each(|x|println!("{}",x))
 }
