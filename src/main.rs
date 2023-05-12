@@ -1,13 +1,13 @@
 #[allow(dead_code)]
 
 fn is_valid_keyword(s:&str)->bool{
-    ["if","while","else","elif","endif","endwhile"].contains(&s)
+    matches!(s, "if" | "while" | "else" | "elif" | "endif")
 }
 fn is_valid_symbol(c:char)->bool{
-    ['+','-','*','/','='].contains(&c)
+    matches!(c, '+' | '-' | '*' | '/' | '=')
 }
 fn is_valid_token(s: &str)->bool{
-   return s.is_empty() || s.chars().all(char::is_alphanumeric) || is_valid_keyword(s);
+   s.is_empty() || s.chars().all(char::is_alphanumeric) || is_valid_keyword(s)
 }
 
 fn find_delimiter <F> (s:&str, op:F)-> (&str,&str) where F: Fn(char)->bool, {
@@ -26,7 +26,10 @@ fn get_first_token(str:&str)->(&str,&str){
     let first = s.chars().next();
     match first{
     Some(first)=>{
-            if first.is_numeric(){
+           if ! is_valid_token(&first.to_string()){
+                panic!("{}", "invalid token detected!!!!");
+            }
+            else if first.is_numeric(){
                 find_delimiter(s, |c|!c.is_numeric())
             }
             else if first.is_alphabetic(){
@@ -58,7 +61,6 @@ fn tokenize_real (s:&str)->Vec<String>{
     tokenize(s, &mut Vec::new())
 }
 fn main() {
-    //let mut tokens = Vec::new();
-    let result = tokenize_real("112peepee+=-yourmom69-");
+    let result = tokenize_real("112peepee & +=-yourmom69-");
     result.iter().for_each(|x|println!("{}",x))
 }
