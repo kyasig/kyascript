@@ -21,7 +21,8 @@ fn find_delimiter <F> (s:&str, op:F)-> (&str,&str) where F: Fn(char)->bool, {
     } 
 } 
 
-fn get_first_token(s:&str)->(&str,&str){
+fn get_first_token(str:&str)->(&str,&str){
+    let s = str.trim();
     let first = s.chars().next();
     match first{
     Some(first)=>{
@@ -32,7 +33,7 @@ fn get_first_token(s:&str)->(&str,&str){
                 return find_delimiter(s, |c| ! c.is_alphanumeric())  
             }
             else if is_valid_symbol(first){
-                return find_delimiter(s, |c| ! is_valid_symbol(c));
+                return s.split_at(1); 
             }
             else{
                 return (" ", " ");
@@ -54,6 +55,6 @@ fn tokenize(s:&str, tokens: &mut Vec<String>)->Vec<String>{
 }
 fn main() {
     let mut tokens = Vec::new();
-    let result = tokenize("1234peepeebutt+16", &mut tokens);
+    let result = tokenize("if   +-/123asspenis11", &mut tokens);
     result.iter().for_each(|x|println!("{}",x))
 }
