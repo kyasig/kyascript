@@ -60,6 +60,30 @@ fn tokenize(s: &str, tokens: &mut Vec<String>) -> Vec<String> {
 fn tokenize_real(s: &str) -> Vec<String> {
     tokenize(s, &mut Vec::new())
 }
+
+
+//////AST stuff//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+#[derive(Debug)]
+enum TokenType{
+    Int(i32),
+    Keyword,
+    Operator,
+    Symbol
+}
+#[derive(Debug)]
+struct ASTNode <T> {
+    value : T,
+    tok_type : TokenType
+}
+
+impl<T: std::fmt::Debug> ASTNode <T>{
+    fn print_node(&self){
+        println!("value: {:?}", self.value);
+        println!("type: {:?}", self.tok_type);
+    }
+}
+
+
 fn main() {
     let result = tokenize_real("if 456somethingidk456 +/()* yourmom");
     result.iter().for_each(|x| println!("{}", x))
