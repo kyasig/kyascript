@@ -61,30 +61,66 @@ fn tokenize_real(s: &str) -> Vec<String> {
     tokenize(s, &mut Vec::new())
 }
 
-
 //////AST stuff//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #[derive(Debug)]
-enum TokenType{
+enum Token {
     Int(i32),
-    Keyword,
-    Operator,
-    Symbol
-}
-#[derive(Debug)]
-struct ASTNode <T> {
-    value : T,
-    tok_type : TokenType
+    Keyword(String),
+    Operator(char),
+    Symbol(char),
+    Identifier(String),
 }
 
-impl<T: std::fmt::Debug> ASTNode <T>{
-    fn print_node(&self){
-        println!("value: {:?}", self.value);
-        println!("type: {:?}", self.tok_type);
+fn to_token(s: String) -> Token {
+    if s.chars().next().unwrap().is_numeric() {
+        Token::Int(s.parse().unwrap())
+    } else if is_valid_keyword(s.as_str()) {
+        Token::Keyword(s)
+    } else if is_valid_symbol(&s){
+        Token::Operator(s.chars().next().unwrap())
+    }else if is_valid_symbol(s.as_str()) {
+        Token::Symbol(s.chars().next().unwrap())
+    } else {
+        Token::Identifier(s)
     }
 }
 
+impl Token {
+    fn print_token(&self) {
+        match self {
+            Token::Int(val) => {
+                println!("type: Integer ");
+                println!("value : {}", val);
+            }
+            Token::Keyword(val) => {
+                println!("type: keyword ");
+                println!("value : {}", val);
+            }
+            Token::Operator(val) => {
+                println!("type: operator ");
+                println!("value : {}", val);
+            }
+            Token::Symbol(val) => {
+                println!("type: operator ");
+                println!("value : {}", val);
+            }
+            Token::Identifier(val) => {
+                println!("type: identifier ");
+                println!("value : {}", val);
+            }
+        }
+    }
+}
 
+enum Tree{
+    EmptyTree,
+    Node{Value : Token, left : Box<Tree>, right : Box<Tree>}
+}
+//TODO the arduous process of actually building a parse tree
 fn main() {
     let result = tokenize_real("if 456somethingidk456 +/()* yourmom");
-    result.iter().for_each(|x| println!("{}", x))
+    result
+        .iter()
+        .map(|x| to_token(x.to_string()))
+        .for_each(|x| x.print_token());
 }
