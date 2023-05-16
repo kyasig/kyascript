@@ -4,7 +4,7 @@ fn is_valid_keyword(s: &str) -> bool {
     matches!(s, "if" | "while" | "else" | "elif" | "endif")
 }
 fn is_valid_symbol(s: &str) -> bool {
-    matches!(s, "+" | "-" | "*" | "/" | "=")
+    matches!(s, "+" | "-" | "*" | "/" | "=" | "(" | ")")
 }
 fn is_valid_token(s: &str) -> bool {
     s.is_empty()
@@ -44,18 +44,15 @@ fn get_first_token(str: &str) -> (&str, &str) {
                 (" ", " ")
             }
         }
-        None => {
-            return (s, " ");
-        }
+        None => (s, " "),
     }
 }
 fn tokenize(s: &str, tokens: &mut Vec<String>) -> Vec<String> {
     let (first, remainder) = get_first_token(&s);
+    tokens.push(first.to_string());
     if remainder.eq(" ") {
-        tokens.push(first.to_string());
         return tokens.iter().map(|s| s.to_string()).collect();
     } else {
-        tokens.push(first.to_string());
         tokenize(&remainder, tokens)
     }
 }
@@ -64,6 +61,6 @@ fn tokenize_real(s: &str) -> Vec<String> {
     tokenize(s, &mut Vec::new())
 }
 fn main() {
-    let result = tokenize_real("112peepee 45654 +=-yourmom69-");
+    let result = tokenize_real("if 456somethingidk456 +/()* yourmom");
     result.iter().for_each(|x| println!("{}", x))
 }
