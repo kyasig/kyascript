@@ -132,33 +132,35 @@ impl Tree {
                     right: Box::new(Tree::EmptyTree),
                 },
             },
-            Tree::Node {
-                Value: Token::Int(_),
-                ..
+            Tree::Node{Value : Token::Int(_),..} | Tree::Node{Value : Token::Identifier(_),..} => match token{
+                Token::Int(_) | Token::Keyword(_) | Token::Identifier(_) =>
+                     panic!("identifiers and integers can not be followed by another identifier or integer"),
+                Token::Operator(_) | Token::Symbol(_) => Tree::Node{
+                    Value: token,
+                    left: Box::new(self),
+                    right: Box::new(Tree::EmptyTree)
+                }
             }
-            | Tree::Node {
-                Value: Token::Identifier(_),
-                ..
-            } => {
-                todo!()
-            }
-            Tree::Node {
-                Value: Token::Operator(_),
-                ..
-            }
-            | Tree::Node {
-                Value: Token::Symbol(_),
-                ..
-            }
-            | Tree::Node {
-                Value: Token::Keyword(_),
-                ..
-            } => todo!(),
+            Tree::Node{Value: tok, left: left_tree,..} => match token{
+                Token::Int(_) | Token::Keyword(_) |Token::Identifier(_) => Tree::Node{
+                    Value: tok,
+                    left: left_tree,
+                    right: Box::new(
+                        Tree::Node{
+                            Value: token,
+                            left: Box::new(Tree::EmptyTree),
+                            right: Box::new(Tree::EmptyTree)
+                        }
+                    )
+                },
+                Token::Operator(_)| Token::Symbol(_)=> panic!("symbols should be followed by an identifier or integer")
+            } 
         }
     }
 }
 fn main() {
     let result = tokenize_real(" 5 + 7");
+    
     result
         .iter()
         .map(|x| to_token(x.to_string()))
