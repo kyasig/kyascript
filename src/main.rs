@@ -76,9 +76,9 @@ fn to_token(s: String) -> Token {
         Token::Int(s.parse().unwrap())
     } else if is_valid_keyword(s.as_str()) {
         Token::Keyword(s)
-    } else if is_valid_symbol(&s){
+    } else if is_valid_symbol(&s) {
         Token::Operator(s.chars().next().unwrap())
-    }else if is_valid_symbol(s.as_str()) {
+    } else if is_valid_symbol(s.as_str()) {
         Token::Symbol(s.chars().next().unwrap())
     } else {
         Token::Identifier(s)
@@ -112,13 +112,53 @@ impl Token {
     }
 }
 
-enum Tree{
+enum Tree {
     EmptyTree,
-    Node{Value : Token, left : Box<Tree>, right : Box<Tree>}
+    Node {
+        Value: Token,
+        left: Box<Tree>,
+        right: Box<Tree>,
+    },
 }
-//TODO the arduous process of actually building a parse tree
+
+impl Tree {
+    fn append(self, token: Token) -> Tree {
+        match self {
+            Tree::EmptyTree => match token {
+                Token::Operator(_) | Token::Symbol(_) => panic!("invalid initial token"),
+                Token::Int(_) | Token::Identifier(_) | Token::Keyword(_) => Tree::Node {
+                    Value: token,
+                    left: Box::new(Tree::EmptyTree),
+                    right: Box::new(Tree::EmptyTree),
+                },
+            },
+            Tree::Node {
+                Value: Token::Int(_),
+                ..
+            }
+            | Tree::Node {
+                Value: Token::Identifier(_),
+                ..
+            } => {
+                todo!()
+            }
+            Tree::Node {
+                Value: Token::Operator(_),
+                ..
+            }
+            | Tree::Node {
+                Value: Token::Symbol(_),
+                ..
+            }
+            | Tree::Node {
+                Value: Token::Keyword(_),
+                ..
+            } => todo!(),
+        }
+    }
+}
 fn main() {
-    let result = tokenize_real("if 456somethingidk456 +/()* yourmom");
+    let result = tokenize_real(" 5 + 7");
     result
         .iter()
         .map(|x| to_token(x.to_string()))
