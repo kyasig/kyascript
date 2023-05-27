@@ -4,20 +4,24 @@ fn is_valid_keyword(s: &str) -> bool {
     matches!(s, "if" | "while" | "else" | "elif" | "endif")
 }
 fn is_valid_symbol(s: &str) -> bool {
-    matches!(s, "+" | "-" | "*" | "/" | "=" | "(" | ")")
+    matches!(s, "=" | "(" | ")")
+}
+fn is_valid_operator(s: &str) -> bool {
+    matches!(s, "+" | "-" | "*" | "/")
 }
 fn is_valid_token(s: &str) -> bool {
     s.is_empty()
         || s.chars().all(char::is_alphanumeric)
         || is_valid_keyword(s)
         || is_valid_symbol(s)
+        || is_valid_operator(s)
 }
 
 fn find_delimiter<F>(s: &str, op: F) -> (&str, &str)
 where
     F: Fn(char) -> bool,
 {
-    let delim = s.chars().position(op);
+    let delim = s.find(op);
     match delim {
         Some(delim) => {
             let (first_token, remainder) = s.split_at(delim);
@@ -33,136 +37,99 @@ fn get_first_token(str: &str) -> (&str, &str) {
     match first {
         Some(first) => {
             if !is_valid_token(&first.to_string()) {
-                panic!("{}", first);
+                panic!("invalid token at{:?}", first);
             } else if first.is_numeric() {
                 find_delimiter(s, |c| !c.is_numeric())
             } else if first.is_alphabetic() {
                 find_delimiter(s, |c| !c.is_alphanumeric())
-            } else if is_valid_symbol(&first.to_string()) {
+            } else if is_valid_symbol(&first.to_string()) || is_valid_operator(&first.to_string()) {
                 s.split_at(1)
             } else {
-                (" ", " ")
+                ("", "")
             }
         }
-        None => (s, " "),
+        None => (s, ""),
     }
 }
-fn tokenize(s: &str, tokens: &mut Vec<String>) -> Vec<String> {
-    let (first, remainder) = get_first_token(&s);
-    tokens.push(first.to_string());
-    if remainder.eq(" ") {
-        return tokens.iter().map(|s| s.to_string()).collect();
-    } else {
-        tokenize(&remainder, tokens)
+fn tokenize(s: &str) -> Vec<&str> {
+    let mut tokens: Vec<&str> = Vec::new();
+    let (mut first, mut remainder) = get_first_token(&s);
+    while remainder != "" {
+        tokens.push(first);
+        (first, remainder) = get_first_token(remainder);
     }
-}
-
-fn tokenize_real(s: &str) -> Vec<String> {
-    tokenize(s, &mut Vec::new())
+    tokens
 }
 
 //////AST stuff//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #[derive(Debug)]
-enum Token {
+enum Token<'a> {
     Int(i32),
-    Keyword(String),
+    Keyword(&'a str),
     Operator(char),
     Symbol(char),
-    Identifier(String),
+    Identifier(&'a str),
 }
 
-fn to_token(s: String) -> Token {
+fn to_token(s: &str) -> Token {
     if s.chars().next().unwrap().is_numeric() {
         Token::Int(s.parse().unwrap())
-    } else if is_valid_keyword(s.as_str()) {
+    } else if is_valid_keyword(s) {
         Token::Keyword(s)
     } else if is_valid_symbol(&s) {
         Token::Operator(s.chars().next().unwrap())
-    } else if is_valid_symbol(s.as_str()) {
-        Token::Symbol(s.chars().next().unwrap())
-    } else {
+    } else if is_valid_operator(&s) {
+        Token::Operator(s.chars().next().unwrap())
+    } else if s.chars().next().unwrap().is_alphabetic() {
         Token::Identifier(s)
+    } else {
+        panic!("wtf is {}", s)
     }
 }
 
-impl Token {
+impl <'a>Token<'a> {
     fn print_token(&self) {
         match self {
             Token::Int(val) => {
                 println!("type: Integer ");
-                println!("value : {}", val);
+                println!("value : {val}");
             }
             Token::Keyword(val) => {
                 println!("type: keyword ");
-                println!("value : {}", val);
+                println!("value : {val}");
             }
             Token::Operator(val) => {
                 println!("type: operator ");
-                println!("value : {}", val);
+                println!("value : {val}");
             }
             Token::Symbol(val) => {
                 println!("type: operator ");
-                println!("value : {}", val);
+                println!("value : {val}");
             }
             Token::Identifier(val) => {
                 println!("type: identifier ");
-                println!("value : {}", val);
+                println!("value : {val}");
             }
         }
     }
 }
 
-enum Tree {
+enum Tree<'a> {
     EmptyTree,
     Node {
-        Value: Token,
-        left: Box<Tree>,
-        right: Box<Tree>,
+        Value: Token<'a>,
+        left: Box<Tree<'a>>,
+        right: Box<Tree<'a>>,
     },
 }
 
-impl Tree {
-    fn append(self, token: Token) -> Tree {
-        match self {
-            Tree::EmptyTree => match token {
-                Token::Operator(_) | Token::Symbol(_) => panic!("invalid initial token"),
-                Token::Int(_) | Token::Identifier(_) | Token::Keyword(_) => Tree::Node {
-                    Value: token,
-                    left: Box::new(Tree::EmptyTree),
-                    right: Box::new(Tree::EmptyTree),
-                },
-            },
-            Tree::Node{Value : Token::Int(_),..} | Tree::Node{Value : Token::Identifier(_),..} => match token{
-                Token::Int(_) | Token::Keyword(_) | Token::Identifier(_) =>
-                     panic!("identifiers and integers can not be followed by another identifier or integer"),
-                Token::Operator(_) | Token::Symbol(_) => Tree::Node{
-                    Value: token,
-                    left: Box::new(self),
-                    right: Box::new(Tree::EmptyTree)
-                }
-            }
-            Tree::Node{Value: tok, left: left_tree,..} => match token{
-                Token::Int(_) | Token::Keyword(_) |Token::Identifier(_) => Tree::Node{
-                    Value: tok,
-                    left: left_tree,
-                    right: Box::new(
-                        Tree::Node{
-                            Value: token,
-                            left: Box::new(Tree::EmptyTree),
-                            right: Box::new(Tree::EmptyTree)
-                        }
-                    )
-                },
-                Token::Operator(_)| Token::Symbol(_)=> panic!("symbols should be followed by an identifier or integer")
-            } 
-        }
-    }
-}
+
+
 fn main() {
-    let result = tokenize_real(" 5 + 7");
-    
+    let result = tokenize("ass + 7");
+    //result.iter().for_each(|x| println!("{}", x));
     result
-        .iter()
-        .map(|x| to_token(x.to_string()))
-        .for_each(|x| x.print_token());
+    .iter()
+    .map(|x| to_token(x))
+    .for_each(|x| x.print_token());
 }
